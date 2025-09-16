@@ -1,7 +1,8 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import React, { useState } from 'react';
-import { Button, FlatList, Platform, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { FlatList, Platform, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useTasks } from './tasks-context';
 
 export default function ModalScreen() {
@@ -36,23 +37,36 @@ export default function ModalScreen() {
     <View style={[styles.container, isDark && styles.containerDark]}>
       <Text style={[styles.title, isDark && styles.titleDark]}>Todo List</Text>
       <View style={styles.inputRow}>
-        <TextInput
-          style={[styles.input, isDark && styles.inputDark]}
-          placeholder="Add a new task"
-          placeholderTextColor={isDark ? '#aaa' : '#888'}
-          value={input}
-          onChangeText={setInput}
-        />
-        <Button title="Add" onPress={handleAddTask} color={isDark ? '#4e8cff' : undefined} />
+        <View style={[styles.inputWrapper, isDark && styles.inputWrapperDark]}>
+          <MaterialIcons name="edit" size={22} color={isDark ? '#e0e0e0' : '#222'} style={styles.inputIcon} />
+          <TextInput
+            style={[styles.input, isDark && styles.inputDark]}
+            placeholder="Add a new task"
+            placeholderTextColor={isDark ? '#aaa' : '#888'}
+            value={input}
+            onChangeText={setInput}
+          />
+        </View>
+        <TouchableOpacity
+          style={[styles.addBtn, isDark && styles.addBtnDark, !input.trim() && styles.addBtnDisabled]}
+          onPress={handleAddTask}
+          disabled={!input.trim()}
+          activeOpacity={input.trim() ? 0.7 : 1}
+        >
+          <MaterialIcons name="add-circle" size={32} color={input.trim() ? (isDark ? '#4e8cff' : '#0a7ea4') : '#b3c7e6'} />
+        </TouchableOpacity>
       </View>
       <View style={styles.inputRow}>
-        <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-          <Text style={[styles.dateBtn, isDark && styles.dateBtnDark]}>Due: {dayjs(dueDate).format('DD MMM YYYY')}</Text>
+        <TouchableOpacity style={[styles.dateBtn, isDark && styles.dateBtnDark]} onPress={() => setShowDatePicker(true)}>
+          <MaterialIcons name="event" size={20} color={isDark ? '#e0e0e0' : '#222'} />
+          <Text style={styles.dateText}>Due: {dayjs(dueDate).format('DD MMM YYYY')}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setCategory('URGENT')} style={[styles.catBtn, category === 'URGENT' && styles.catBtnActive]}>
+          <MaterialIcons name="priority-high" size={20} color={category === 'URGENT' ? '#fff' : '#d32f2f'} />
           <Text style={[styles.catText, category === 'URGENT' && styles.catTextActive]}>Urgent</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setCategory('GENERAL')} style={[styles.catBtn, category === 'GENERAL' && styles.catBtnActive]}>
+          <MaterialIcons name="label" size={20} color={category === 'GENERAL' ? '#fff' : '#388e3c'} />
           <Text style={[styles.catText, category === 'GENERAL' && styles.catTextActive]}>General</Text>
         </TouchableOpacity>
       </View>
@@ -67,28 +81,37 @@ export default function ModalScreen() {
           }}
         />
       )}
-      <FlatList
-        data={sortedTasks}
-        keyExtractor={(_, idx) => idx.toString()}
-        renderItem={({ item, index }) => (
-          <View style={[styles.todoRow, isDark && styles.todoRowDark]}>
-            <TouchableOpacity onPress={() => handleToggleComplete(index)}>
-              <Text style={[styles.todoText, isDark && styles.todoTextDark, completed.includes(index) && styles.completedText]}>
-                {item.text}
-                {completed.includes(index) && <Text style={styles.completedLabel}> (Completed)</Text>}
-              </Text>
-            </TouchableOpacity>
-            <View>
-              <Text style={styles.dueDate}>Due: {dayjs(item.dueDate).format('DD MMM YYYY')}</Text>
-              <Text style={item.category === 'Urgent' ? styles.urgent : styles.general}>{item.category}</Text>
+      <View style={styles.listContainer}>
+        <FlatList
+          data={sortedTasks}
+          keyExtractor={(_, idx) => idx.toString()}
+          renderItem={({ item, index }) => (
+            <View style={[styles.todoRow, isDark && styles.todoRowDark, completed.includes(index) && styles.todoRowCompleted]}>
+              <TouchableOpacity style={styles.completeBtn} onPress={() => handleToggleComplete(index)}>
+                <MaterialIcons name={completed.includes(index) ? 'check-circle' : 'radio-button-unchecked'} size={24} color={completed.includes(index) ? '#4e8cff' : '#bbb'} />
+              </TouchableOpacity>
+              <View style={styles.todoInfo}>
+                <Text style={[styles.todoText, isDark && styles.todoTextDark, completed.includes(index) && styles.completedText]}>
+                  {item.text}
+                  {completed.includes(index) && <Text style={styles.completedLabel}> (Completed)</Text>}
+                </Text>
+                <View style={styles.todoMeta}>
+                  <MaterialIcons name="event" size={16} color="#888" />
+                  <Text style={styles.dueDate}>Due: {dayjs(item.dueDate).format('DD MMM YYYY')}</Text>
+                  <MaterialIcons name={item.category === 'Urgent' ? 'priority-high' : 'label'} size={16} color={item.category === 'Urgent' ? '#d32f2f' : '#388e3c'} />
+                  <Text style={item.category === 'Urgent' ? styles.urgent : styles.general}>{item.category}</Text>
+                </View>
+              </View>
+              <TouchableOpacity style={styles.removeBtn} onPress={() => removeTask(index)}>
+                <MaterialIcons name="delete" size={24} color="#ff6b6b" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={() => removeTask(index)}>
-              <Text style={[styles.remove, isDark && styles.removeDark]}>Remove</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        ListEmptyComponent={<Text style={[styles.empty, isDark && styles.emptyDark]}>No tasks yet.</Text>}
-      />
+          )}
+          ListEmptyComponent={<Text style={[styles.empty, isDark && styles.emptyDark]}>No tasks yet.</Text>}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
     </View>
   );
 }
@@ -98,60 +121,161 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    backgroundColor: '#f5f8fd', // Soft blue background
   },
   containerDark: {
-    backgroundColor: '#181818',
+    backgroundColor: '#181c24', // Deep dark blue
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#222',
+    marginBottom: 28,
+    color: '#0a7ea4', // Main accent blue
+    fontFamily: 'System',
+    letterSpacing: 0.5,
   },
   titleDark: {
-    color: '#e0e0e0',
+    color: '#4e8cff', // Accent blue for dark mode
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
+    gap: 8,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eaf2fb', // Light blue
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#b3c7e6',
+    paddingHorizontal: 12,
+    flex: 1,
+  },
+  inputWrapperDark: {
+    backgroundColor: '#232a36',
+    borderColor: '#3a4a62',
+  },
+  inputIcon: {
+    marginRight: 6,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    width: 200,
-    marginRight: 10,
-    backgroundColor: '#f7f7f7',
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    backgroundColor: 'transparent',
     color: '#222',
+    fontSize: 17,
+    fontFamily: 'System',
   },
   inputDark: {
-    borderColor: '#444',
-    backgroundColor: '#222',
     color: '#e0e0e0',
+  },
+  addBtn: {
+    marginLeft: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff', // Button background is white
+    borderRadius: 50,
+    padding: 6,
+    borderWidth: 2,
+    borderColor: '#0a7ea4', // Blue border for visibility
+    shadowColor: '#0a7ea4',
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  addBtnDark: {
+    backgroundColor: '#fff', // White background for dark mode too
+    borderColor: '#4e8cff', // Blue border for dark mode
+  },
+  addBtnDisabled: {
+    opacity: 0.5,
+    borderColor: '#b3c7e6', // Faded border for disabled
+  },
+  dateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eaf2fb',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  dateBtnDark: {
+    backgroundColor: '#232a36',
+  },
+  dateText: {
+    marginLeft: 8,
+    color: '#0a7ea4',
+    fontWeight: 'bold',
+    fontSize: 16,
+    fontFamily: 'System',
+  },
+  catBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eaf2fb',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#b3c7e6',
+  },
+  catBtnActive: {
+    backgroundColor: '#0a7ea4',
+    borderColor: '#0a7ea4',
+  },
+  catText: {
+    color: '#0a7ea4',
+    fontWeight: 'bold',
+    marginLeft: 6,
+    fontSize: 16,
+    fontFamily: 'System',
+  },
+  catTextActive: {
+    color: '#fff',
   },
   todoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    width: 320,
-    backgroundColor: '#fafafa',
-    borderRadius: 6,
-    marginBottom: 8,
+    borderBottomColor: '#eaf2fb',
+    width: 340,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    marginBottom: 12,
+    shadowColor: '#0a7ea4',
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
   },
   todoRowDark: {
-    backgroundColor: '#232323',
-    borderBottomColor: '#333',
+    backgroundColor: '#232a36',
+    borderBottomColor: '#3a4a62',
+  },
+  todoRowCompleted: {
+    opacity: 0.6,
+    backgroundColor: '#eaf2fb',
+  },
+  completeBtn: {
+    marginRight: 8,
+  },
+  todoInfo: {
+    flex: 1,
   },
   todoText: {
     fontSize: 18,
     color: '#222',
+    fontFamily: 'System',
+    letterSpacing: 0.2,
   },
   todoTextDark: {
     color: '#e0e0e0',
@@ -159,103 +283,65 @@ const styles = StyleSheet.create({
   completedText: {
     textDecorationLine: 'line-through',
     color: '#888',
+    fontFamily: 'System',
   },
   completedLabel: {
     color: '#4e8cff',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: 'bold',
+    fontFamily: 'System',
   },
-  remove: {
-    color: 'red',
-    fontWeight: 'bold',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  todoMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 8,
+  },
+  removeBtn: {
+    marginLeft: 8,
+    padding: 4,
     borderRadius: 4,
     backgroundColor: '#ffeaea',
   },
+  remove: {
+    display: 'none', // Hide old remove button
+  },
   removeDark: {
-    backgroundColor: '#3a1a1a',
-    color: '#ff6b6b',
+    display: 'none',
   },
   empty: {
-    color: '#888',
+    color: '#4e8cff',
     fontStyle: 'italic',
-    marginTop: 20,
+    marginTop: 28,
+    textAlign: 'center',
+    fontSize: 16,
+    fontFamily: 'System',
   },
   emptyDark: {
-    color: '#aaa',
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  categoryBtn: {
-    padding: 10,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    marginRight: 10,
-    backgroundColor: '#f7f7f7',
-  },
-  categoryBtnDark: {
-    borderColor: '#444',
-    backgroundColor: '#222',
-  },
-  selectedCategory: {
-    borderColor: '#4e8cff',
-    backgroundColor: '#e6f0ff',
-  },
-  categoryText: {
-    fontWeight: 'bold',
-    color: '#222',
-  },
-  categoryTextDark: {
-    color: '#e0e0e0',
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  dateBtn: {
-    backgroundColor: '#e0e0e0',
-    padding: 8,
-    borderRadius: 6,
-    marginRight: 10,
-    color: '#222',
-  },
-  dateBtnDark: {
-    backgroundColor: '#333',
-    color: '#e0e0e0',
-  },
-  catBtn: {
-    backgroundColor: '#f0f0f0',
-    padding: 8,
-    borderRadius: 6,
-    marginRight: 5,
-  },
-  catBtnActive: {
-    backgroundColor: '#4e8cff',
-  },
-  catText: {
-    color: '#222',
-    fontWeight: 'bold',
-  },
-  catTextActive: {
-    color: '#fff',
+    color: '#b3c7e6',
   },
   dueDate: {
-    fontSize: 12,
-    color: '#888',
+    fontSize: 13,
+    color: '#0a7ea4',
+    fontWeight: 'bold',
+    fontFamily: 'System',
   },
   urgent: {
-    color: 'red',
+    color: '#d32f2f',
     fontWeight: 'bold',
-    fontSize: 13,
+    fontSize: 15,
+    fontFamily: 'System',
   },
   general: {
-    color: 'green',
+    color: '#388e3c',
     fontWeight: 'bold',
-    fontSize: 13,
+    fontSize: 15,
+    fontFamily: 'System',
+  },
+  listContainer: {
+    flex: 1,
+    width: '100%',
+    marginTop: 8,
+    marginBottom: 8,
   },
 });
