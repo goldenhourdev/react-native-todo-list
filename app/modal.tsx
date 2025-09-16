@@ -12,6 +12,7 @@ export default function ModalScreen() {
   const [dueDate, setDueDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [category, setCategory] = useState<'URGENT' | 'GENERAL'>('GENERAL');
+  const [completed, setCompleted] = useState<number[]>([]);
 
   const handleAddTask = () => {
     if (input.trim()) {
@@ -21,6 +22,15 @@ export default function ModalScreen() {
       setCategory('GENERAL');
     }
   };
+
+  const handleToggleComplete = (index: number) => {
+    setCompleted((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  };
+
+  // Sort tasks by due date ascending
+  const sortedTasks = [...tasks].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
   return (
     <View style={[styles.container, isDark && styles.containerDark]}>
@@ -58,12 +68,17 @@ export default function ModalScreen() {
         />
       )}
       <FlatList
-        data={tasks}
+        data={sortedTasks}
         keyExtractor={(_, idx) => idx.toString()}
         renderItem={({ item, index }) => (
           <View style={[styles.todoRow, isDark && styles.todoRowDark]}>
+            <TouchableOpacity onPress={() => handleToggleComplete(index)}>
+              <Text style={[styles.todoText, isDark && styles.todoTextDark, completed.includes(index) && styles.completedText]}>
+                {item.text}
+                {completed.includes(index) && <Text style={styles.completedLabel}> (Completed)</Text>}
+              </Text>
+            </TouchableOpacity>
             <View>
-              <Text style={[styles.todoText, isDark && styles.todoTextDark]}>{item.text}</Text>
               <Text style={styles.dueDate}>Due: {dayjs(item.dueDate).format('DD MMM YYYY')}</Text>
               <Text style={item.category === 'Urgent' ? styles.urgent : styles.general}>{item.category}</Text>
             </View>
@@ -140,6 +155,15 @@ const styles = StyleSheet.create({
   },
   todoTextDark: {
     color: '#e0e0e0',
+  },
+  completedText: {
+    textDecorationLine: 'line-through',
+    color: '#888',
+  },
+  completedLabel: {
+    color: '#4e8cff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   remove: {
     color: 'red',
